@@ -41,37 +41,57 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321')); //handle signed cookies
 
 //auth midleware
 function auth (req, res, next) {
+  console.log(req.signedCookies);
 
-  console.log(req.headers);
-  var authHeader = req.headers.authorization;
+  if(!req.signedCookies.user){
+    var authHeader = req.headers.authorization;
 
-  //if authHeader is not present
-  if (!authHeader) {
+    //if authHeader is not present
+    if (!authHeader) {
+        var err = new Error('You are not authenticated!');
+
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        return next(err);    
+    }
+
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+
+    var user = auth[0];
+    var pass = auth[1];
+
+    //default username and password 
+    if (user == 'admin' && pass == 'password') {
+        //if authorized go to the next midlewear
+        //setup the cookie
+        res.cookie('user','admin' , { signed: true });
+        next(); // authorized
+    }
+  else {
       var err = new Error('You are not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      next(err);
-      return;
-  }
 
-  var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  var user = auth[0];
-  var pass = auth[1];
-
-  //default username and password 
-  if (user == 'admin' && pass == 'password') {
-      // if authorized go to the next midlewear
-      next(); // authorized
-  } else {
-      var err = new Error('You are not authenticated!');
       res.setHeader('WWW-Authenticate', 'Basic');      
       err.status = 401;
-      next(err);
-  }
+      return next(err);
+   }
+ }
+ else{
+   if(req.signedCookies.user === 'admin'){
+     next();
+   }
+   else{
+    var err = new Error('You are not authenticated!');
+
+    res.setHeader('WWW-Authenticate', 'Basic');      
+    err.status = 401;
+    return next(err);
+   }
+ }
+
 }
 
 app.use(auth);
