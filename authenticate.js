@@ -27,21 +27,33 @@ opts.secretOrKey = config.secretKey;
 exports.jwtPassport = passport.use(new JwtStrategy(opts, 
     (jwt_payload, done) => {
         //done is callback
-        console.log("JWT payload: ",jwt_payload);
-        User.findOne({_id: jwt_payload._id}, (err, user) =>{
-            if(err) {
-                return done(err, false);
-            }
-            else if(user){
-                //if user is not null
-                return done(null, user);
-            }
-            else{
-                //user not found
-                return done(null, false);
-            }
-        });
-    }));
+    console.log("JWT payload: ",jwt_payload);
+    User.findOne({_id: jwt_payload._id}, (err, user) =>{
+        if(err) {
+            return done(err, false);
+        }
+        else if(user){
+            //if user is not null
+            return done(null, user);
+        }
+        else{
+            //user not found
+            return done(null, false);
+        }
+    });
+ }));
 
-    //verify an incoming user
-    exports.verifyUser = passport.authenticate('jwt',{session: false});//because we are using jwt based auth(not using sessions)
+//verify an incoming user
+exports.verifyUser = passport.authenticate('jwt',{session: false});//because we are using jwt based auth(not using sessions)
+
+//function to check whether ordinary user is admin or not
+exports.verifyAdmin = function(req, res, next){
+    if(req.user.admin){
+        next();
+    }
+    else{
+        var err = new Error("You are not authorized to perform this operation");
+        err.status = 403;
+        next(err);
+    }
+};

@@ -10,9 +10,22 @@ var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', function(req, res, next){
-  res.send('respond with a resource');
+//user list can be accessed only by admin
+// "/users" endpoint
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
+   //get the users list from the database
+   User.find({} , (err,users) => {
+     if(err) {
+        return next(err);
+     }
+     else {
+       res.statusCode = 200;
+       res.setHeader('Content-Type', 'application/json');
+       res.json(users);       
+     }
+   })
 });
+
 
 //signup a user
 router.post('/signup', function(req,res,next) {
@@ -29,8 +42,8 @@ router.post('/signup', function(req,res,next) {
       //if request body contains firstname and last name
       if(req.body.firstname)
         user.firstname = req.body.firstname;
-      if(req.body.lasttname)
-        user.firstname = req.body.lastname;
+      if(req.body.lastname)
+        user.lastname = req.body.lastname;
 
       user.save((err, user) => {
         //if there is a error in saving changes to the user
@@ -66,9 +79,8 @@ router.post('/login', passport.authenticate('local'), (req,
 
 
 router.get('/logout', (req, res) => {
-  if (req.session) {
-    req.session.destroy();
-    res.clearCookie('session-id');
+  if ( passport.authenticate('local')) {
+    res.clearCookie('token');
     res.redirect('/');
   }
   else{
