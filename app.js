@@ -40,7 +40,7 @@ connect.then((db) =>{
 var app = express();
 
 //redirect http request to https
-// Secure traffic only
+// Secure traffic  only
 app.all('*', (req, res, next) => {
   if (req.secure) {
     return next();
