@@ -5,6 +5,7 @@ const res = require('express/lib/response');
 const req = require('express/lib/request');
 var passport = require('passport');
 var authenticate = require('../authenticate');
+var cors = require('./cors');
 
 var router = express.Router();
 router.use(bodyParser.json());
@@ -12,7 +13,7 @@ router.use(bodyParser.json());
 /* GET users listing. */
 //user list can be accessed only by admin
 // "/users" endpoint
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
+router.get('/',cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin,(req, res, next) => {
    //get the users list from the database
    User.find({} , (err,users) => {
      if(err) {
@@ -28,7 +29,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin,(req, res, nex
 
 
 //signup a user
-router.post('/signup', function(req,res,next) {
+router.post('/signup',cors.corsWithOptions,  function(req,res,next) {
   User.register( new User({username: req.body.username}), 
   req.body.password , (err, user) =>{
 
@@ -66,7 +67,7 @@ router.post('/signup', function(req,res,next) {
 
 
 //login a user
-router.post('/login', passport.authenticate('local'), (req, 
+router.post('/login',cors.corsWithOptions,  passport.authenticate('local'), (req, 
   res) => {
 
     //create the token including user id
